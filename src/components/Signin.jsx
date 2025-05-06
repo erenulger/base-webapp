@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { UserAuth } from "../context/AuthContext";
+import { supabase } from "../supabaseClient";
 
 const Signin = () => {
   const [email, setEmail] = useState("");
@@ -30,6 +31,30 @@ const Signin = () => {
     if (session) {
       closeModal();
       setError(""); // Reset the error when there's a session
+    }
+  };
+
+  const handleGoogleSignIn = async (e) => {
+    e.preventDefault();
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/dashboard`
+        }
+      });
+
+      if (error) {
+        setError(error.message);
+        setTimeout(() => {
+          setError("");
+        }, 3000);
+      }
+    } catch (err) {
+      setError("An error occurred during Google sign in");
+      setTimeout(() => {
+        setError("");
+      }, 3000);
     }
   };
 
@@ -65,6 +90,7 @@ const Signin = () => {
         <button className="w-full mt-4">Sign In</button>
         {error && <p className="text-red-600 text-center pt-4">{error}</p>}
       </form>
+      <button onClick={handleGoogleSignIn} className="w-full mt-4">Sign In with Google</button>
     </div>
   );
 };
