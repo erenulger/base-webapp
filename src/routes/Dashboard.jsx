@@ -18,13 +18,19 @@ const Dashboard = () => {
   };
   console.log(session);
   return (
-    <div>
+    <div className="dashboard">
       <h1>Dashboard</h1>
       <h2>Welcome, {session?.user?.email}</h2>
-      <div>
+      <div className="dashboard-actions">
+        <button
+          onClick={() => navigate('/contactlist')}
+          className="contact-list-btn border px-4 py-3 mt-4 mr-4 hover:bg-gray-100"
+        >
+          View Contact List
+        </button>
         <p
           onClick={handleSignOut}
-          className="hover:cursor-pointer  border inline-block px-4 py-3 mt-4 "
+          className="sign-out-btn hover:cursor-pointer border inline-block px-4 py-3 mt-4"
         >
           Sign out
         </p>

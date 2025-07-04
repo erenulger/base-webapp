@@ -4,77 +4,80 @@ import { supabase } from "../supabaseClient";
 const AuthContext = createContext();
 
 export const AuthContextProvider = ({ children }) => {
-  const [session, setSession] = useState(undefined);
+  const [session, setSession] = useState(null);
+  const [user, setUser] = useState(null);
 
-  // Sign up
+  // ✅ SIGN UP
   const signUpNewUser = async (email, password) => {
     const { data, error } = await supabase.auth.signUp({
       email: email.toLowerCase(),
-      password: password,
+      password,
     });
 
+    console.log("Signup result:", { data, error });
+
     if (error) {
-      console.error("Error signing up: ", error);
       return { success: false, error };
     }
 
     return { success: true, data };
   };
 
-  // Sign in
+  // ✅ SIGN IN
   const signInUser = async (email, password) => {
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.toLowerCase(),
-        password: password,
-      });
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email.toLowerCase(),
+      password,
+    });
 
-      // Handle Supabase error explicitly
-      if (error) {
-        console.error("Sign-in error:", error.message); // Log the error for debugging
-        return { success: false, error: error.message }; // Return the error
-      }
-
-      // If no error, return success
-      console.log("Sign-in success:", data);
-      return { success: true, data }; // Return the user data
-    } catch (error) {
-      // Handle unexpected issues
-      console.error("Unexpected error during sign-in:", err.message);
-      return {
-        success: false,
-        error: "An unexpected error occurred. Please try again.",
-      };
+    if (error) {
+      console.error("Sign-in error:", error.message);
+      return { success: false, error };
     }
+
+    return { success: true, data };
   };
 
+  // ✅ SIGN OUT
+  const signOut = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) console.error("Sign out error:", error);
+  };
+
+  // ✅ LISTEN FOR SESSION AND USER CHANGES
   useEffect(() => {
+    // Initial session fetch
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
+      setUser(session?.user || null);
     });
 
-    supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
+    // Listen to changes
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setSession(session);
+        setUser(session?.user || null);
+      }
+    );
+
+    return () => {
+      authListener?.subscription?.unsubscribe();
+    };
   }, []);
-
-  // Sign out
-  async function signOut() {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.error("Error signing out:", error);
-    }
-  }
 
   return (
     <AuthContext.Provider
-      value={{ signUpNewUser, signInUser, session, signOut }}
+      value={{
+        session,
+        user,
+        signUpNewUser,
+        signInUser,
+        signOut,
+      }}
     >
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const UserAuth = () => {
-  return useContext(AuthContext);
-};
+export const UserAuth = () => useContext(AuthContext);
